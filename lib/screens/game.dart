@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/parallax.dart';
@@ -8,19 +9,23 @@ import 'package:flutter/material.dart';
 import "package:flame/game.dart";
 import 'package:google_fonts/google_fonts.dart';
 
-class GameScreen extends FlameGame with TapDetector{
+  var count=0;
+  bool died=false;
+
+
+
+class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
 
   var dash;
   var background;
   var ground;
-  var pipe;
+  var pipe1;
+  var pipe2;
   var spriteSheet;
   var idleAnimation;
   var tapAnimation;
 
   var tapped=0;
-  var count=0;
-
 
   TextPaint textPaint = TextPaint(
   style: GoogleFonts.vt323(
@@ -51,15 +56,22 @@ class GameScreen extends FlameGame with TapDetector{
     add(background);
 
 
-    pipe=SpriteComponent(
-      sprite:await loadSprite("pipe.png"),
-      size:Vector2(screenWidth/5, screenHeight*2), 
-      position:Vector2(screenWidth, -screenHeight/1.5),
-      );
+    pipe1=Pipe()
+      ..sprite=await loadSprite("pipe1.png")
+      ..size=Vector2(screenWidth/5, screenHeight)
+      ..position=Vector2(screenWidth, -screenHeight/1.5);
+  
 
-    add(pipe);
+    add(pipe1);
 
 
+    pipe2=Pipe()
+      ..sprite=await loadSprite("pipe2.png")
+      ..size=Vector2(screenWidth/5, screenHeight)
+      ..position=Vector2(screenWidth, screenHeight/2);
+  
+
+    add(pipe2);
 
     ground=await ParallaxComponent.load(
       [
@@ -78,12 +90,11 @@ class GameScreen extends FlameGame with TapDetector{
     idleAnimation=spriteSheet.createAnimation(row:0, stepTime:0.1, to:1);
     tapAnimation=spriteSheet.createAnimation(row: 0, stepTime:0.1, from:1, to:2);
 
-    dash=SpriteAnimationComponent(
-      animation:idleAnimation,
-      position:Vector2(screenWidth/6, screenWidth/2),
-      size:Vector2(screenWidth/9, screenHeight/20),
-      angle:0
-    );
+    dash=Dash()
+    ..animation=idleAnimation
+    ..position=Vector2(screenWidth/6, screenWidth/2)
+    ..size=Vector2(screenWidth/9, screenHeight/20)
+    ..angle=0;
 
     add(dash);
 
@@ -92,9 +103,11 @@ class GameScreen extends FlameGame with TapDetector{
   @override
   void update(dt) async{
     super.update(dt);
-    pipe.x=pipe.x-3.5;
+    if(!died){
+    pipe1.x=pipe1.x-3.5;
+    pipe2.x=pipe2.x-3.5;
     dash.y=dash.y+1.75;
-    dash.angle=dash.angle+0.002;
+    dash.angle=dash.angle+0.0025;
 
     var random=Random();
     var randomNumber=random.nextInt(340)+100;
@@ -105,12 +118,21 @@ class GameScreen extends FlameGame with TapDetector{
       dash.animation=tapAnimation;
     }
 
-    if(pipe.x<-size[0]+300){
-      pipe.x=size[0];
-      pipe.y=-size[1]+randomNumber;
+    if(pipe1.x<-size[0]+300){
+      pipe1.x=size[0];
+      pipe1.y=-size[1]+randomNumber;
+      pipe2.x=size[0];
+      pipe2.y=-pipe1.y/2+dash.size[1]*2;
+      print(pipe2.y);
       count++;
     }
 
+    }else{
+      tapped=1;
+      pipe1.x=dash.x;
+      pipe2.x=dash.x;
+      dash.y=dash.y+10;
+    }
   
   }
 
@@ -122,6 +144,7 @@ class GameScreen extends FlameGame with TapDetector{
     if(tapped>1){
       tapped=0;
     }
+
   }
 
   @override
@@ -130,3 +153,39 @@ class GameScreen extends FlameGame with TapDetector{
     textPaint.render(canvas, "$count", Vector2(size[0]/2.2, size[1]/20));
   }
 }
+
+class Dash extends SpriteAnimationComponent with CollisionCallbacks{
+
+      Future<void> onLoad() async{
+        await super.onLoad();
+        add(CircleHitbox(
+
+        ));
+        debugMode=true;
+      }
+
+      void onCollision(Set<Vector2> intersectionPoints, PositionComponent dash){
+        if(dash is Pipe){
+          died=true;
+        }
+      }
+}
+
+
+class Pipe extends SpriteComponent with CollisionCallbacks{
+  
+
+      Future<void> onLoad() async{
+        await super.onLoad();
+        add(RectangleHitbox(
+        ));
+        debugMode=true;
+      }
+
+      void onCollision(Set<Vector2> intersectionPoints, PositionComponent pipe){
+        if(pipe is Dash){
+          died=true;
+        }
+      }
+}
+
