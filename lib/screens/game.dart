@@ -1,19 +1,31 @@
 import 'dart:math';
 import 'package:flame/collisions.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flame/parallax.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import "package:flame/game.dart";
+import "package:flame/input.dart";
 import 'package:google_fonts/google_fonts.dart';
 
+
+
   var count=0;
+  var highCount=0;
   bool died=false;
   bool up=false;
 
 
+
+
 class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
+
+  void playDeath(){
+    add(restartButton);
+   FlameAudio.play("deathsound.mp3");
+  }
+
 
   var dash;
   var background;
@@ -23,6 +35,7 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
   var spriteSheet;
   var idleAnimation;
   var tapAnimation;
+  var restartButton;
 
   var tapped=0;
 
@@ -93,6 +106,12 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     ..angle=0;
 
     add(dash);
+
+
+      restartButton=SpriteComponent()
+      ..sprite=await loadSprite("restart.png")
+      ..position=Vector2(size[0]/6, size[1]/3)
+      ..size=Vector2(size[0]/1.5, size[1]/3);
   }
 
   @override
@@ -108,9 +127,12 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     }else{
       dash.animation=tapAnimation;
     }
+    
 
+    if(pipe1.x<-size[0]+335){
 
-    if(pipe1.x<-size[0]+300){
+      FlameAudio.play("pipesound.mp3");
+
       var random=Random().nextInt(180);
 
       pipe1.x=size[0];
@@ -126,23 +148,43 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     pipe2.y=pipe2.y-random;
     }
 
-
     }
 
     }else{
       tapped=1;
+      if(count>highCount){
+        highCount=count;
+      }
+
+      if(dash.y<ground.y-dash.size[1]){
       dash.y=dash.y+10;
+      }else{
+        playDeath();
+      }
     }
   
   }
 
   @override
   void onTap() async{
+    if(!died){
     tapped++;
     dash.angle=dash.angle-0.06;
     dash.y=dash.y-40;
     if(tapped>1){
       tapped=0;
+    }
+    }else{
+      remove(restartButton);
+      count=0;
+       tapped=0;
+       died=false;
+       dash.angle=0.1;
+       dash.y=size[1]/2;
+       pipe1.x=size[0];
+       pipe2.x=size[0];
+       pipe1.y=-size[1]/1.65;
+       pipe2.y=-pipe1.y;
     }
 
   }
@@ -150,7 +192,12 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
   @override
   void render(canvas){
     super.render(canvas);
-    textPaint.render(canvas, "$count", Vector2(size[0]/2.2, size[1]/20));
+    if(!died){
+          textPaint.render(canvas, "$count", Vector2(size[0]/2.25, size[1]/20));
+    }else{
+        textPaint.render(canvas, "$count", Vector2(size[0]/2.25, size[1]/20));
+        textPaint.render(canvas, "Highscore: $highCount", Vector2(size[0]/7.5, size[1]/1.5));
+    }
   }
 }
 
@@ -160,9 +207,7 @@ class Dash extends SpriteAnimationComponent with CollisionCallbacks{
         Future<void> onLoad() async{
         await super.onLoad();
         add(CircleHitbox(
-
         ));
-        debugMode=true;
       }
 
       void onCollision(Set<Vector2> intersectionPoints, PositionComponent dash){
@@ -180,7 +225,6 @@ class Pipe extends SpriteComponent with CollisionCallbacks{
         await super.onLoad();
         add(RectangleHitbox(
         ));
-        debugMode=true;
       }
 
 }
@@ -194,9 +238,7 @@ class Ground extends SpriteComponent with CollisionCallbacks{
         Future<void> onLoad() async{
         await super.onLoad();
         add(RectangleHitbox(
-        ));
-        debugMode=true;
-        
+        ));        
       }
 
       void onCollision(Set<Vector2> intersectionPoints, PositionComponent ground){
@@ -205,5 +247,7 @@ class Ground extends SpriteComponent with CollisionCallbacks{
         }
       }
 }
+
+
 
 
