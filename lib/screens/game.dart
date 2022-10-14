@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -11,7 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 
   var count=0;
   bool died=false;
-
+  bool up=false;
 
 
 class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
@@ -32,7 +31,7 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     textStyle:const TextStyle(
     fontSize: 60.0,
     fontWeight:FontWeight.bold
-   )
+   ),
   ),
 );
 
@@ -59,7 +58,7 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     pipe1=Pipe()
       ..sprite=await loadSprite("pipe1.png")
       ..size=Vector2(screenWidth/5, screenHeight)
-      ..position=Vector2(screenWidth, -screenHeight/1.5);
+      ..position=Vector2(screenWidth, -screenHeight/1.65);
   
 
     add(pipe1);
@@ -68,20 +67,17 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     pipe2=Pipe()
       ..sprite=await loadSprite("pipe2.png")
       ..size=Vector2(screenWidth/5, screenHeight)
-      ..position=Vector2(screenWidth, screenHeight/2);
+      ..position=Vector2(screenWidth, -pipe1.y);
   
 
     add(pipe2);
 
-    ground=await ParallaxComponent.load(
-      [
-        ParallaxImageData("ground.png")
-      ],
-      baseVelocity: Vector2(10,0),
-      velocityMultiplierDelta: Vector2.all(10),
-      position: Vector2(0, screenHeight/1.25),
-      size:Vector2(screenWidth, screenHeight/3)
-    );
+
+    ground=Ground()
+      ..sprite=await loadSprite("ground.png")
+      ..position=Vector2(0, screenHeight/1.05)
+      ..size=Vector2(screenWidth, screenHeight/3);
+    
 
     add(ground);
 
@@ -92,12 +88,11 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
 
     dash=Dash()
     ..animation=idleAnimation
-    ..position=Vector2(screenWidth/6, screenWidth/2)
-    ..size=Vector2(screenWidth/9, screenHeight/20)
+    ..position=Vector2(screenWidth/6, screenHeight/2)
+    ..size=Vector2(screenWidth/10, screenHeight/22)
     ..angle=0;
 
     add(dash);
-
   }
 
   @override
@@ -106,31 +101,36 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
     if(!died){
     pipe1.x=pipe1.x-3.5;
     pipe2.x=pipe2.x-3.5;
-    dash.y=dash.y+1.75;
-    dash.angle=dash.angle+0.0025;
-
-    var random=Random();
-    var randomNumber=random.nextInt(340)+100;
-
+    dash.y=dash.y+2;
+    dash.angle=dash.angle+0.003;
     if(tapped==0){
       dash.animation=idleAnimation;
     }else{
       dash.animation=tapAnimation;
     }
 
+
     if(pipe1.x<-size[0]+300){
+      var random=Random().nextInt(180);
+
       pipe1.x=size[0];
-      pipe1.y=-size[1]+randomNumber;
       pipe2.x=size[0];
-      pipe2.y=-pipe1.y/2+dash.size[1]*2;
-      print(pipe2.y);
       count++;
+      up=!up;
+
+    if(up){
+    pipe1.y=pipe1.y+random;
+    pipe2.y=pipe2.y+random;
+    }else{
+    pipe1.y=pipe1.y-random;
+    pipe2.y=pipe2.y-random;
+    }
+
+
     }
 
     }else{
       tapped=1;
-      pipe1.x=dash.x;
-      pipe2.x=dash.x;
       dash.y=dash.y+10;
     }
   
@@ -139,8 +139,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
   @override
   void onTap() async{
     tapped++;
-    dash.angle=dash.angle-0.075;
-    dash.y=dash.y-50;
+    dash.angle=dash.angle-0.06;
+    dash.y=dash.y-40;
     if(tapped>1){
       tapped=0;
     }
@@ -156,7 +156,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection{
 
 class Dash extends SpriteAnimationComponent with CollisionCallbacks{
 
-      Future<void> onLoad() async{
+      @override
+        Future<void> onLoad() async{
         await super.onLoad();
         add(CircleHitbox(
 
@@ -174,18 +175,35 @@ class Dash extends SpriteAnimationComponent with CollisionCallbacks{
 
 class Pipe extends SpriteComponent with CollisionCallbacks{
   
-
-      Future<void> onLoad() async{
+      @override
+        Future<void> onLoad() async{
         await super.onLoad();
         add(RectangleHitbox(
         ));
         debugMode=true;
       }
 
-      void onCollision(Set<Vector2> intersectionPoints, PositionComponent pipe){
-        if(pipe is Dash){
+}
+
+
+
+class Ground extends SpriteComponent with CollisionCallbacks{
+  
+
+      @override
+        Future<void> onLoad() async{
+        await super.onLoad();
+        add(RectangleHitbox(
+        ));
+        debugMode=true;
+        
+      }
+
+      void onCollision(Set<Vector2> intersectionPoints, PositionComponent ground){
+        if(ground is Dash){
           died=true;
         }
       }
 }
+
 
