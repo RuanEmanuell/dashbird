@@ -12,17 +12,24 @@ import 'package:google_fonts/google_fonts.dart';
 bool died = false;
 
 class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
-  var count = 0;
-  var highCount = 0;
+  int count = 0;
+  int highCount = 0;
   bool up = false;
+  int removeButton = 0;
 
-  void playDeath() {
-    add(restartButton);
-    FlameAudio.play("deathsound.mp3");
+  void playDeath() async {
+    restartButton = SpriteComponent()
+      ..sprite = await loadSprite("restart.png")
+      ..position = Vector2(size[0] / 6, size[1] / 3)
+      ..size = Vector2(size[0] / 1.5, size[1] / 3);
+
+    if (removeButton == 1) {
+      add(restartButton);
+    }
   }
 
   void movePipeY() {
-    var random = Random().nextInt(180);
+    var random = Random().nextInt(160);
 
     if (up) {
       pipe1.y = pipe1.y + random;
@@ -38,17 +45,22 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
     pipe2.x = size[0];
   }
 
-  void resetGame() {
-    remove(restartButton);
-    count = 0;
-    tapped = 0;
-    died = false;
-    dash.angle = 0.1;
-    dash.y = size[1] / 2;
-    pipe1.x = size[0];
-    pipe2.x = size[0];
-    pipe1.y = -size[1] / 1.65;
-    pipe2.y = -pipe1.y;
+  void resetGame() async {
+    playDeath();
+
+    if (removeButton == 2) {
+      count = 0;
+      tapped = 0;
+      died = false;
+      removeButton = 0;
+      remove(restartButton);
+      dash.angle = 0.1;
+      dash.y = size[1] / 2;
+      pipe1.x = size[0];
+      pipe2.x = size[0];
+      pipe1.y = -size[1] / 1.65;
+      pipe2.y = -pipe1.y;
+    }
   }
 
   late SpriteAnimationComponent dash;
@@ -74,6 +86,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
   Future<void> onLoad() async {
     super.onLoad();
 
+    FlameAudio.bgm.play("music.mp3", volume: 0.4);
+
     //Taking the width and height of the screen
     final screenWidth = size[0];
     final screenHeight = size[1];
@@ -87,14 +101,14 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
 
     pipe1 = Pipe()
       ..sprite = await loadSprite("pipe1.png")
-      ..size = Vector2(screenWidth / 5, screenHeight)
+      ..size = Vector2(screenWidth / 4, screenHeight)
       ..position = Vector2(screenWidth, -screenHeight / 1.65);
 
     add(pipe1);
 
     pipe2 = Pipe()
       ..sprite = await loadSprite("pipe2.png")
-      ..size = Vector2(screenWidth / 5, screenHeight)
+      ..size = pipe1.size
       ..position = Vector2(screenWidth, -pipe1.y);
 
     add(pipe2);
@@ -114,15 +128,10 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
     dash = Dash()
       ..animation = idleAnimation
       ..position = Vector2(screenWidth / 6, screenHeight / 2)
-      ..size = Vector2(screenWidth / 10, screenHeight / 22)
+      ..size = Vector2(screenWidth / 6, screenHeight / 16)
       ..angle = 0;
 
     add(dash);
-
-    restartButton = SpriteComponent()
-      ..sprite = await loadSprite("restart.png")
-      ..position = Vector2(size[0] / 6, size[1] / 3)
-      ..size = Vector2(size[0] / 1.5, size[1] / 3);
   }
 
   @override
@@ -148,8 +157,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
       /*If the pipe passed the screenWidth, we play the sound, increase the count,
     move it to the other side of the screen and give it a random height
     */
-      if (pipe1.x < -size[0] + 325) {
-        FlameAudio.play("pipesound.mp3");
+      if (pipe1.x < -size[0] + 300) {
+        await FlameAudio.play("pipesound.mp3");
 
         count++;
         up = !up;
@@ -167,13 +176,10 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
       if (count > highCount) {
         highCount = count;
       }
-      /*Making Dash "fall" until he reaches the ground, then adding the reset button
-      and death music
+      /*Making Dash "fall" until he reaches the ground
       */
       if (dash.y < ground.y - dash.size[1]) {
         dash.y = dash.y + 10;
-      } else {
-        playDeath();
       }
     }
   }
@@ -190,7 +196,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
         tapped = 0;
       }
     } else {
-      //If the player died and taps on the screen, we reset the game
+      //If the player died and taps on the screen 2 times, we reset the game
+      removeButton++;
       resetGame();
     }
   }
@@ -198,11 +205,15 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
   @override
   void render(canvas) {
     super.render(canvas);
-    //If he don't died it will only show the score, else it will be also show the Highscore
+    /*If he don't died it will only show the score, if he dies and not taps it
+    will display a message, else it will be the Highscore and the restart button*/
     if (!died) {
       textPaint.render(canvas, "$count", Vector2(size[0] / 2.25, size[1] / 20));
-    } else {
+    } else if (removeButton == 0) {
       textPaint.render(canvas, "$count", Vector2(size[0] / 2.25, size[1] / 20));
+      textPaint.render(canvas, "YOU DIED!", Vector2(size[0] / 5, size[1] / 2));
+    } else {
+      textPaint.render(canvas, "Highscore: $highCount", Vector2(size[0] / 7.5, size[1] / 1.5));
       textPaint.render(canvas, "Highscore: $highCount", Vector2(size[0] / 7.5, size[1] / 1.5));
     }
   }
