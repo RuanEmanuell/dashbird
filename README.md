@@ -2,7 +2,7 @@
 
 ## DashBird
 
-A FlappyBird-like game made in Flutter using <a href="https://pub.dev/packages/flame">Flame</a>.
+A FlappyBird-like game made in Flutter using <a href="https://pub.dev/packages/flame">Flame</a>, starring <a href="https://docs.flutter.dev/dash#:~:text=Dash%20is%20the%20mascot%20for,app%20for%20web%20and%20mobile!">Dash</a>
 
 ### How to Run
 
