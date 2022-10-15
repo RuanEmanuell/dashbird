@@ -16,5 +16,6 @@ seu projeto Flutter.
 
 
 ### Esse projeto foi feito apenas por estudos e diversão!!
-Hope you enjoy! :)
-Feel free to modify!
+Espero que gostem! :)
+Se sintam livres pra modificar!
+
