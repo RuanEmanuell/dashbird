@@ -15,7 +15,7 @@ seu projeto Flutter.
 ![dashbird](https://user-images.githubusercontent.com/113607857/195988917-f08a5666-eb72-4d63-9fbe-d0cb240ba931.gif)
 
 
-### Esse projeto foi feito apenas por estudos e diversão!!
+### Esse projeto foi feito apenas por questões de estudo!
 Espero que gostem! :)
 Se sintam livres pra modificar!
 
