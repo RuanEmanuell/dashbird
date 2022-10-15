@@ -29,8 +29,7 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
   }
 
   void movePipeY() {
-    var random = Random().nextInt(160);
-
+    var random = Random().nextInt(200);
     if (up) {
       pipe1.y = pipe1.y + random;
       pipe2.y = pipe2.y + random;
@@ -38,6 +37,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
       pipe1.y = pipe1.y - random;
       pipe2.y = pipe2.y - random;
     }
+
+    print(pipe1.y);
   }
 
   void movePipeX() {
@@ -87,6 +88,7 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
     super.onLoad();
 
     FlameAudio.bgm.play("music.mp3", volume: 0.4);
+    FlameAudio.audioCache.load("pipesound.mp3");
 
     //Taking the width and height of the screen
     final screenWidth = size[0];
@@ -144,8 +146,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
     if (!died) {
       pipe1.x = pipe1.x - 3.5;
       pipe2.x = pipe2.x - 3.5;
-      dash.y = dash.y + 2;
-      dash.angle = dash.angle + 0.003;
+      dash.y = dash.y + 3;
+      dash.angle = dash.angle + 0.005;
 
       //Deciding which animation will be showed
       if (tapped == 0) {
@@ -157,15 +159,15 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
       /*If the pipe passed the screenWidth, we play the sound, increase the count,
     move it to the other side of the screen and give it a random height
     */
-      if (pipe1.x < -size[0] + 300) {
-        await FlameAudio.play("pipesound.mp3");
-
+      if (pipe1.x < -size[0]/2.2) {
         count++;
         up = !up;
 
         movePipeX();
 
         movePipeY();
+
+        await FlameAudio.play("pipesound.mp3");
       }
     } else {
       /*If the player died, we remove his ability to change animations and
@@ -189,8 +191,8 @@ class GameScreen extends FlameGame with TapDetector, HasCollisionDetection {
     //If the player is still alive, each tap will increase his height and angle
     if (!died) {
       tapped++;
-      dash.angle = dash.angle - 0.06;
-      dash.y = dash.y - 40;
+      dash.angle = dash.angle - 0.09;
+      dash.y = dash.y - size[1]/15;
       //Reseting the tap count to handle Dash's animation
       if (tapped > 1) {
         tapped = 0;
